@@ -1,40 +1,77 @@
-# Soldered NAZIV PROIZVODA Component
+# Soldered BMP585 Barometric Pressure Sensor Component
 
-| ![Product name](https://upload.wikimedia.org/wikipedia/commons/8/8f/Example_image.svg) |
+| ![Soldered BMP585 Barometric Pressure Sensor breakout](TODO_PRODUCT_IMAGE_URL) |
 | :------------------------------------------------------------------------------------: |
-|                      [NAZIV PROIZVODA](https://www.solde.red/SKU)                      |
+|                      [Soldered BMP585 Barometric Pressure Sensor breakout](https://www.solde.red/333189)                      |
 
-OPIS PROIZVODA + LINK NA [Qwiic ecosystem](https://soldered.com/collections/qwiic-ecosystem).
+<!-- TODO: product not released yet (SKU 333189), swap the image URL above once the listing is live -->
 
-### Using the template
+ESP-IDF component for the Soldered BMP585 breakout board. The BMP585 is a Bosch barometric pressure sensor, measuring absolute pressure with ±6 Pa relative accuracy at output data rates up to 240 Hz, with configurable oversampling and an on-chip IIR filter, and supporting normal, forced and continuous power modes for balancing measurement speed against power consumption. The board connects over I2C and is part of the [Qwiic ecosystem](https://soldered.com/collections/qwiic-ecosystem), so no soldering is needed to hook it up.
 
-Before publishing a new component make sure to replace:
+### Installation
 
-- `NAZIV PROIZVODA`, `OPIS PROIZVODA`, product image, SKU link, and the "Original source" line in this README
-- `version`, `description`, `url` in `idf_component.yml`
-- `components:` name and `namespace:` in `.github/workflows/upload_component.yml`
-- filenames in `src/` and `include/` plus matching `SRCS` and `INCLUDE_DIRS` in `CMakeLists.txt` and `#include` in the `.c` file
-- dependency key in `examples/.../idf_component.yml` (path stays `../../..`)
-- `@file`, `@brief`, `@param`, `@return` Doxygen comments in `include/*.h`, `src/*.c`, and `examples/basic/main/main.c` to describe the real API
+Add it to your project with the component manager:
 
-Also make sure to add examples.
+```bash
+idf.py add-dependency "solderedelectronics/soldered-bmp585"
+```
 
-Run `./format.sh` before committing to auto-format `src/`, `include/`, and the example against the project's astyle rules (`.astyle_rules.yml`). CI runs the same check on every push/PR via `.github/workflows/format_check.yml` and fails on unformatted code.
+Or clone this repository into your project's `components/` folder.
 
-For uploading to Registry you need to register a trusted publisher under a component. To make the release to the registry you must bump `version` in `idf_component.yml` to `X.Y.Z`, push that commit, and confirm Format Check + Build Examples both pass on it (Actions tab) before tagging. Only once both are green: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+### Usage
 
-**Remove this section of README after everything is done!**
+The I2C bus belongs to your application, not to the driver, so that other Qwiic devices can share it. Create the bus first, then hand it over:
+
+```c
+#include "driver/i2c_master.h"
+#include "soldered_bmp585.h"
+
+i2c_master_bus_config_t bus_cfg = {
+    .i2c_port = I2C_NUM_0,
+    .sda_io_num = GPIO_NUM_21,
+    .scl_io_num = GPIO_NUM_22,
+    .clk_source = I2C_CLK_SRC_DEFAULT,
+    .glitch_ignore_cnt = 7,
+    .flags.enable_internal_pullup = true,
+};
+i2c_master_bus_handle_t bus;
+ESP_ERROR_CHECK(i2c_new_master_bus(&bus_cfg, &bus));
+
+bmp585_t sensor;
+ESP_ERROR_CHECK(soldered_bmp585_init(&sensor, bus, BMP5_I2C_ADDR_SEC));
+
+if (soldered_bmp585_get_sensor_data(&sensor) == BMP5_OK) {
+    printf("%.2f Pa, %.2f degC\n", sensor.data.pressure, sensor.data.temperature);
+}
+```
+
+`soldered_bmp585_init_with_config()` takes a different I2C clock.
+
+Every call leaves the Bosch API result code in the handle, so `soldered_bmp585_check_status()` and `soldered_bmp585_status_string()` describe what went wrong after any of them.
+
+### Examples
+
+- **basic_readings** - reads pressure and temperature in a loop in normal power mode, the mode most applications want
+- **forced_mode_custom_config** - configures oversampling/IIR filtering and takes single-shot readings in forced power mode, for low-power, infrequent-reading use cases
+
+Build any of them with:
+
+```bash
+cd examples/basic_readings
+idf.py set-target esp32
+idf.py build flash monitor
+```
 
 ### Repository Contents
 
-- **/src** - source files (.c)
-- **/include** - header files (.h)
+- **/src** - source files (.c), with the unmodified Bosch BMP5_SensorAPI in `src/bmp5_api/`
+- **/include** - header files (.h), with the Bosch API headers in `include/bmp5_api/`
 - **/examples** - examples for using the library
 - **_other_** - idf_component.yml manifest file for ESP Component Registry
 
 ### Hardware design
 
-You can find hardware design for this board in _NAZIV PROIZVODA_ hardware repository.
+You can find hardware design for this board in the Soldered BMP585 Barometric Pressure Sensor breakout hardware repository.
 
 ### Documentation
 
@@ -52,7 +89,7 @@ At Soldered, we design and manufacture a wide selection of electronic products t
 
 ### Original source
 
-This library is possible thanks to original [arduino-mcp23017](https://github.com/blemasle/arduino-mcp23017) library. Thank you, blemasle.
+This component is possible thanks to the original [BMP5_SensorAPI](https://github.com/boschsensortec/BMP5_SensorAPI) by Bosch Sensortec. Thank you, Bosch. The Bosch API is BSD-3-Clause licensed, its license is kept alongside the sources in `src/bmp5_api/LICENSE`.
 
 ### Open-source license
 
