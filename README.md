@@ -53,6 +53,7 @@ Every call leaves the Bosch API result code in the handle, so `soldered_bmp585_c
 
 - **basic_readings** - reads pressure and temperature in a loop in normal power mode, the mode most applications want
 - **forced_mode_custom_config** - configures oversampling/IIR filtering and takes single-shot readings in forced power mode, for low-power, infrequent-reading use cases
+- **data_ready_interrupt** - uses the sensor's physical interrupt pin to know when a new reading is ready, instead of polling the interrupt status register
 
 Build any of them with:
 

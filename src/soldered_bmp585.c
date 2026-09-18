@@ -289,6 +289,30 @@ int8_t soldered_bmp585_get_interrupt_status(bmp585_t *dev, uint8_t *status)
     return dev->status;
 }
 
+int8_t soldered_bmp585_configure_interrupt(bmp585_t *dev, enum bmp5_intr_mode mode, enum bmp5_intr_polarity pol,
+                                           enum bmp5_intr_drive drive, bool enable)
+{
+    dev->status =
+        bmp5_configure_interrupt(mode, pol, drive, enable ? BMP5_INTR_ENABLE : BMP5_INTR_DISABLE, &dev->sensor);
+
+    return dev->status;
+}
+
+int8_t soldered_bmp585_set_interrupt_source(bmp585_t *dev, bool data_ready, bool fifo_full, bool fifo_threshold,
+                                            bool pressure_oor)
+{
+    struct bmp5_int_source_select source = {
+        .drdy_en = data_ready ? BMP5_ENABLE : BMP5_DISABLE,
+        .fifo_full_en = fifo_full ? BMP5_ENABLE : BMP5_DISABLE,
+        .fifo_thres_en = fifo_threshold ? BMP5_ENABLE : BMP5_DISABLE,
+        .oor_press_en = pressure_oor ? BMP5_ENABLE : BMP5_DISABLE,
+    };
+
+    dev->status = bmp5_int_source_select(&source, &dev->sensor);
+
+    return dev->status;
+}
+
 int8_t soldered_bmp585_get_sensor_data(bmp585_t *dev)
 {
     struct bmp5_osr_odr_press_config config = {0};

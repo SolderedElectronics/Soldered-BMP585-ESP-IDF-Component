@@ -224,8 +224,8 @@ int8_t soldered_bmp585_get_iir_config(bmp585_t *dev, struct bmp5_iir_config *con
 /**
  * @brief Get the data-ready / FIFO / OOR interrupt status
  *
- * Useful for polling since this breakout doesn't expose the sensor's
- * interrupt pin.
+ * Useful whether you're polling it directly or checking it after the
+ * sensor's physical interrupt pin fires.
  *
  * @param[in,out] dev Handle
  * @param[out] status Bitmask of BMP5_INT_ASSERTED_* flags
@@ -233,6 +233,39 @@ int8_t soldered_bmp585_get_iir_config(bmp585_t *dev, struct bmp5_iir_config *con
  * @return BMP5_OK on success, a Bosch API error code otherwise
  */
 int8_t soldered_bmp585_get_interrupt_status(bmp585_t *dev, uint8_t *status);
+
+/**
+ * @brief Configure the behavior of the sensor's physical interrupt pin
+ *
+ * Does not select which condition asserts it, see
+ * soldered_bmp585_set_interrupt_source().
+ *
+ * @param[in,out] dev Handle
+ * @param[in] mode BMP5_PULSED or BMP5_LATCHED
+ * @param[in] pol BMP5_ACTIVE_LOW or BMP5_ACTIVE_HIGH
+ * @param[in] drive BMP5_INTR_PUSH_PULL or BMP5_INTR_OPEN_DRAIN
+ * @param[in] enable Whether to enable the interrupt pin
+ *
+ * @return BMP5_OK on success, a Bosch API error code otherwise
+ */
+int8_t soldered_bmp585_configure_interrupt(bmp585_t *dev, enum bmp5_intr_mode mode, enum bmp5_intr_polarity pol,
+                                           enum bmp5_intr_drive drive, bool enable);
+
+/**
+ * @brief Select which condition(s) assert the sensor's physical interrupt pin
+ *
+ * Call soldered_bmp585_configure_interrupt() first.
+ *
+ * @param[in,out] dev Handle
+ * @param[in] data_ready Assert on a new pressure/temperature reading
+ * @param[in] fifo_full Assert when the FIFO buffer is full
+ * @param[in] fifo_threshold Assert when the FIFO watermark is reached
+ * @param[in] pressure_oor Assert when pressure goes out of range
+ *
+ * @return BMP5_OK on success, a Bosch API error code otherwise
+ */
+int8_t soldered_bmp585_set_interrupt_source(bmp585_t *dev, bool data_ready, bool fifo_full, bool fifo_threshold,
+                                            bool pressure_oor);
 
 /**
  * @brief Read a new pressure/temperature measurement into `dev->data`
